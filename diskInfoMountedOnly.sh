@@ -1,5 +1,6 @@
 #!/bin/sh
-echo
+echo FreeNAS forum member NASbox contributed this script. 
+echo https://forums.freenas.org/index.php?threads/script-to-identify-disk-drives-device-name-serial-gptid.60497/ 
 echo $(basename $0) - Mounted Drives on $(hostname)
 cat /etc/version
 date
@@ -19,4 +20,3 @@ do
    printf "| %-6s | %-24s | %-16s | %-42s |\n" "$d" "$diskdescription" "$diskserialno" "$diskgptid"
    echo "+--------+--------------------------+------------------+--------------------------------------------+"
 done
-
