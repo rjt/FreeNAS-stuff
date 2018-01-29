@@ -1,0 +1,69 @@
+https://stackoverflow.com/questions/384108/moving-from-cvs-to-git-id-equivalent
+
+I had the same problem. Needed to have a version that was simpler than a 
+hash string and available for people using the tool without needing to 
+connect to the repository.
+
+I did it with a git pre-commit hook and changed my script to be able 
+to automatically update itself.
+
+I base the version off of the number of commits done. This is a 
+slight race condition because two people could commit at the same 
+time and both think they are committing the same version number, 
+but we don't have many developers on this project.
+
+Mine is in ruby, but it's not terribly complex code. The ruby script has:
+
+MYVERSION = '1.090'
+## Call script to do updateVersion from .git/hooks/pre-commit
+def updateVersion
+  # We add 1 because the next commit is probably one more - though this is a race
+  commits = %x[git log #{$0} | grep '^commit ' | wc -l].to_i + 1
+  vers = "1.%0.3d" % commits
+
+  t = File.read($0)
+  t.gsub!(/^MYVERSION = '(.*)'$/, "MYVERSION = '#{vers}'")
+  bak = $0+'.bak'
+  File.open(bak,'w') { |f| f.puts t }
+  perm = File.stat($0).mode & 0xfff
+  File.rename(bak,$0)
+  File.chmod(perm,$0)
+  exit
+end
+And then I have a command-line option (-updateVersion) that 
+calls updateVersion for the tool.  
+
+Finally, I go to the git head and create an executable script
+in .git/hooks/pre-commit.
+
+The script simply changes to the head of the git directory 
+and calls my script with -updateVersion
+
+Everytime I check in, the MYVERSION variable is updated 
+based on what the number of commits will be.
+
+
+answered Nov 12 '12 at 23:25
+
+David Ljung Madison
+1,1761031
+
+
+
+	
+You can do this by adding a pattern for which files you want this 
+functionality followed by ident in the  .gitattributes file. This 
+will replace $Id$ with $Id:<40-digit SHA>$ on checkout of the file. 
+Notice though that it won't give you a revision number of the file 
+as in CVS/SVN.
+
+Example:
+
+$ echo '*.txt ident' >> .gitattributes
+$ echo '$Id$' > test.txt
+$ git commit -a -m "test"
+
+$ rm test.txt
+$ git checkout -- test.txt
+$ cat test.txt
+Link to gitattributes(5) Manual Page
